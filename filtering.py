@@ -50,23 +50,22 @@ async def main(df):
         
         results_dict = {image_id: is_perspective for image_id, is_perspective in results}
 
-        df_filtered = df[df['image_id'].map(results_dict)].copy()
+        mask = df['image_id'].map(results_dict)
 
          # Count and print the number of perspective cameras
-        num_perspective_cameras = sum(results_dict.values())
+        num_perspective_cameras = mask.sum()
         print(f"Number of perspective cameras: {num_perspective_cameras}")
 
-    return df_filtered
-
-
+    return df[mask].copy()
 
 if __name__ == '__main__':
     print("Reading Cells...")
 
     df =  pd.read_csv(f'cells_{cell_size}.csv')
+    df['image_id'] = df['image_id'].astype(int)
 
     print("Filtering...")
     df_filtered = asyncio.run(main(df))
 
-    print("SAving...") 
+    print("Saving...") 
     df_filtered.to_csv(f'cells_{cell_size}_perspectives.csv', index=False)
