@@ -1,6 +1,6 @@
 import pandas as pd
 import matplotlib
-matplotlib.use('TkAgg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 import matplotlib.colors as colors
@@ -9,10 +9,27 @@ import cartopy.crs as ccrs
 from scipy.ndimage.filters import gaussian_filter
 import os
 
-cell_size  = 10
+cell_size  = 0.1
 DATA_FOLDER = '/var/data/llandrieu/mapillary_full/'
+OUT_FOLDER = '/var/data/llandrieu/geoscrapping/'
 
-def view_distribution(df, filename=''):
+def compute_entropy(series):
+    # Compute probabilities
+    p = series.value_counts(normalize=True)
+    # Compute entropy
+    entropy = -np.sum(p * np.log(p))
+    # Number of unique classes or categories
+    n_unique = len(p)
+    # Normalize the entropy
+    normalized_entropy = entropy / np.log(n_unique)
+    return normalized_entropy
+
+def view_distribution(df, filename='', cell_size=cell_size):
+    
+    country_counts = df['country'].value_counts().head(20)
+    country_percentage = country_counts / len(df) * 100
+    print(country_percentage)
+
     latitude = df['latitude']
     longitude = df['longitude']
 
@@ -22,9 +39,17 @@ def view_distribution(df, filename=''):
     ax.stock_img()
 
     #Define the bins for the histogram
-    num_bins = 250
+    num_bins = 100
     lon_bins = np.linspace(longitude.min(), longitude.max(), num_bins)
     lat_bins = np.linspace(latitude.min(), latitude.max(), num_bins)
+
+    df['lon_bin'] = np.clip(np.digitize(df['longitude'], lon_bins) - 1, 0, num_bins - 2) # Note the -2
+    df['lat_bin'] = np.clip(np.digitize(df['latitude'], lat_bins) - 1, 0, num_bins - 2) # Note the -2
+
+    country_entropy = compute_entropy(df['country'])
+    df['cell'] = list(zip(df['lon_bin'], df['lat_bin']))
+    cell_gini = compute_entropy(df['cell'])
+    print(f"Country entropy: {country_entropy:.3f} + cell entropy: {cell_gini:.3f}")
 
     # Calculate the 2D histogram
     hist, xedges, yedges = np.histogram2d(longitude, latitude, bins=[lon_bins, lat_bins])
@@ -47,8 +72,8 @@ def view_distribution(df, filename=''):
     cb = fig.colorbar(img, cax=cax, extend='min')
     cb.set_label('Log-scaled count')
 
-    plt.show()
-    plt.savefig(f'density_{cell_size}_{filename}.png')
+    #plt.show()    
+    plt.savefig(os.path.join('./imgs',f'density_{cell_size}_{filename}.png'))
 
 
 
@@ -58,7 +83,7 @@ if __name__ == '__main__':
 
         print("Reading Cells...")
 
-        df =  pd.read_csv(f'cells_{cell_size}_filtered.csv')
+        train_df =  pd.read_csv(os.path.join(OUT_FOLDER,'./processed/train',f'cells_{cell_size}_filtered.csv'))
         df['image_id'] = df['image_id'].astype(int)
 
         print("Computing Density Map...")

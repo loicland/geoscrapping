@@ -8,8 +8,9 @@ from dask.diagnostics import ProgressBar
 # Main Execution
 DATA_FOLDER = '/home/ign.fr/llandrieu/Documents/data/plonk/mapillary_full'
 DATA_FOLDER = '/var/data/llandrieu/mapillary_full/'
-cell_size  = 1
-min_img_per_cell = 5
+OUT_FOLDER = '/var/data/llandrieu/geoscrapping/'
+cell_size  = 0.1
+min_img_per_cell = 3
 compute_size = False
 
 def lat_lon_to_grid_index(lat, lon, cell_size=10):
@@ -47,18 +48,17 @@ with ProgressBar():
     }).reset_index()
 
     # Rename columns for clarity
-    aggregated_ddf.columns = ["lat_idx", "lon_idx", "first_image_id", "image_count", "latitude", "longitude"]
+    aggregated_ddf.columns = ["lat_idx", "lon_idx", "image_id", "image_count", "latitude", "longitude"]
 
     # Filter out cells with less than N images
     aggregated_ddf = aggregated_ddf[aggregated_ddf["image_count"] >= min_img_per_cell].compute()
 
 
-shape = aggregated_ddf.shape
-print(f"Selected {aggregated_ddf.shape[0]:,} cells")
+print(f"Selected {aggregated_ddf.shape[0]:,} cells ")
 
 # Merge the unique_cells with the original DDF to get the full rows of the selected unique cells
  
 print("Saving Results...")
-aggregated_ddf.to_csv(f'cells_{cell_size}.csv', index=False) 
+aggregated_ddf.to_csv(os.path.join(OUT_FOLDER,'./processed',f'cells_{cell_size}.csv'), index=False)
 
 print("Done!")

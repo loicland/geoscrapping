@@ -9,11 +9,12 @@ from math import radians, sin, cos, sqrt, asin
 # Main Execution
 #DATA_FOLDER = '/home/ign.fr/llandrieu/Documents/data/plonk/mapillary_full'
 DATA_FOLDER = '/var/data/llandrieu/mapillary_full/'
-cell_size  = 10
+cell_size  = 0.1
 compute_size = False
 
 TOKEN = "MLY|6237607803001040|1e22d1eebebaa36be00be1a63a809e5a"
 PROXY = "http://proxy.ign.fr:3128"
+OUT_FOLDER = '/var/data/llandrieu/geoscrapping/'
 
 def haversine_distance(lat1, lon1, lat2, lon2):
     if (lat1 is None) or (lon1 is None) or (lat2 is None) or (lon2 is None):
@@ -133,11 +134,11 @@ if __name__ == '__main__':
 
     print("Reading Cells...")
 
-    df =  pd.read_csv(f'cells_{cell_size}.csv')
-    df['image_id'] = df['first_image_id'].astype(int)
+    df =  pd.read_csv(os.path.join(OUT_FOLDER,'./processed',f'cells_{cell_size}.csv'))
+    df['image_id'] = df['image_id'].astype(int)
 
     print("Filtering...")
     df_filtered = asyncio.run(main(df))
 
     print("Saving...") 
-    df_filtered.to_csv(f'cells_{cell_size}_filtered.csv', index=False)
+    df_filtered.to_csv(os.path.join(OUT_FOLDER,'./processed',f'cells_{cell_size}_filtered.csv'), index=False)
