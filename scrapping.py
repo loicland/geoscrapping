@@ -10,7 +10,7 @@ DATA_FOLDER = '/home/ign.fr/llandrieu/Documents/data/plonk/mapillary_full'
 DATA_FOLDER = '/var/data/llandrieu/mapillary_full/'
 OUT_FOLDER = '/var/data/llandrieu/geoscrapping/'
 cell_size  = 0.1
-min_img_per_cell = 3
+min_img_per_cell = 2
 compute_size = False
 
 def lat_lon_to_grid_index(lat, lon, cell_size=10):

@@ -76,6 +76,49 @@ def view_distribution(df, filename='', cell_size=cell_size):
     plt.savefig(os.path.join('./imgs',f'density_{cell_size}_{filename}.png'))
 
 
+def view_distribution_simple(df, filename='', cell_size=cell_size):
+    
+    latitude = df['latitude']
+    longitude = df['longitude']
+
+    # Create a figure with a map
+    fig = plt.figure(figsize=(10, 10))
+    ax = plt.axes(projection=ccrs.PlateCarree())
+    ax.stock_img()
+
+    #Define the bins for the histogram
+    num_bins = 100
+    lon_bins = np.linspace(longitude.min(), longitude.max(), num_bins)
+    lat_bins = np.linspace(latitude.min(), latitude.max(), num_bins)
+
+    df['lon_bin'] = np.clip(np.digitize(df['longitude'], lon_bins) - 1, 0, num_bins - 2) # Note the -2
+    df['lat_bin'] = np.clip(np.digitize(df['latitude'], lat_bins) - 1, 0, num_bins - 2) # Note the -2
+
+      # Calculate the 2D histogram
+    hist, xedges, yedges = np.histogram2d(longitude, latitude, bins=[lon_bins, lat_bins])
+
+    # Smooth the histogram
+    #sigma = 1  # Width of the Gaussian filter
+    #hist = gaussian_filter(hist, sigma)
+
+    # Generate a logarithmic color scale
+    cmap = plt.get_cmap('inferno')
+    cmap.set_under('white', alpha=0)  # All densities below `low_density` are set to be fully transparent.
+    low_density = 1
+    norm = colors.LogNorm(vmin=low_density, vmax=hist.max())
+
+    # Plot the density heatmap
+    img = ax.pcolormesh(lon_bins, lat_bins, hist.T, cmap=cmap, norm=norm, transform=ccrs.PlateCarree(), rasterized=True)
+
+    # Add a colorbar
+    cax = fig.add_axes([ax.get_position().x1+0.01,ax.get_position().y0,0.02,ax.get_position().height/1])
+    cb = fig.colorbar(img, cax=cax, extend='min')
+    cb.set_label('Log-scaled count')
+
+    #plt.show()    
+    plt.savefig(os.path.join('./imgs',f'density_{cell_size}_{filename}.png'))
+
+
 
 if __name__ == '__main__':
 
@@ -83,11 +126,13 @@ if __name__ == '__main__':
 
         print("Reading Cells...")
 
-        train_df =  pd.read_csv(os.path.join(OUT_FOLDER,'./processed/train',f'cells_{cell_size}_filtered.csv'))
+        #df =  pd.read_csv(os.path.join(OUT_FOLDER,'processed/',f'cells_{cell_size}_enriched.csv'))
+
+        df =  pd.read_csv(os.path.join(OUT_FOLDER,f'./processed/train_{cell_size}.csv'))
         df['image_id'] = df['image_id'].astype(int)
 
         print("Computing Density Map...")
-        view_distribution(df)
+        view_distribution_simple(df)
 
         print("Done!")
     

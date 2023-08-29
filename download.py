@@ -11,8 +11,10 @@ cell_size = 0.1
 MAX_RETRIES = 5
 TIMEOUT_DURATION = 3600
 CONCURRENT_REQUESTS = 32
-SPLIT = 'train'
+SKIP_ROWS = 0
+SPLIT = 'test'
 OUT_FOLDER = '/var/data/llandrieu/geoscrapping/'
+#OUT_FOLDER = '/home/ign.fr/llandrieu/Documents/code/geoscrapping/'
 PROXY = "http://proxy.ign.fr:3128"
 
 
@@ -23,39 +25,48 @@ async def download_image(semaphore, session, url, id, image_path, tqdm_instance)
     async with semaphore:
         retries = 0
         while retries < MAX_RETRIES:
-            async with session.get(url, timeout=TIMEOUT_DURATION, proxy=PROXY) as response:
-                try:
-                    if response.status != 200:
-                        print(f"Error {response.status}: {id}, {url}")
-                        break
+            try: 
+                async with session.get(url, timeout=TIMEOUT_DURATION, proxy=PROXY) as response:
+                    try:
+                        if response.status != 200:
+                            print(f"Error {response.status}: {id}, {url}")
+                            break
 
-                    content = content = await response.content.read()
-                    img = Image.open(BytesIO(content))
-                    img = img.convert("RGB")
-                    width, height = img.size
-                    if width >= 512 or height >= 512:
-                        if width < height:
-                            new_width = 512
-                            new_height = int(height * (new_width / width))
-                        else:
-                            new_height = 512
-                            new_width = int(width * (new_height / height))
-                        img = img.resize(
-                            (new_width, new_height), resample=Image.BILINEAR
-                        )
-                    img.save(image_path / f"{id}.jpg")
-                    break
-                except (asyncio.TimeoutError, aiohttp.client_exceptions.ServerDisconnectedError, aiohttp.client_exceptions.ClientConnectorError) as e:
-                    print(f"{type(e).__name__} - {id}, {url}")
-                    retries += 1
-                except OSError:
-                    print(f"OSError: {id}, {url}")
-                    break
-                except aiohttp.client_exceptions.ClientPayloadError:
-                    retries += 1
-                    await asyncio.sleep(2)  # You can adjust the sleep duration
-                finally:
-                    tqdm_instance.update(1)
+                        content = content = await response.content.read()
+                        img = Image.open(BytesIO(content))
+                        img = img.convert("RGB")
+                        width, height = img.size
+                        if width >= 512 or height >= 512:
+                            if width < height:
+                                new_width = 512
+                                new_height = int(height * (new_width / width))
+                            else:
+                                new_height = 512
+                                new_width = int(width * (new_height / height))
+                            img = img.resize(
+                                (new_width, new_height), resample=Image.BILINEAR
+                            )
+                        img.save(image_path / f"{id}.jpg")
+                        break
+                    except (asyncio.TimeoutError, aiohttp.client_exceptions.ServerDisconnectedError, aiohttp.client_exceptions.ClientConnectorError) as e:
+                        print(f"{type(e).__name__} - {id}, {url}")
+                        retries += 1
+                    except aiohttp.client_exceptions.ServerDisconnectedError:
+                        print(f"Server disconnected error: {id}, {url}. Retry {retries+1}/5")
+                        retries += 1
+                        await asyncio.sleep(5)  # sleep for 5 seconds before retrying
+                    except OSError:
+                        print(f"OSError: {id}, {url}")
+                        break
+                    except aiohttp.client_exceptions.ClientPayloadError:
+                        retries += 1
+                        await asyncio.sleep(2)  # You can adjust the sleep duration
+                    finally:
+                        tqdm_instance.update(1)
+            except aiohttp.client_exceptions.ServerDisconnectedError:
+                print(f"Server disconnected error: {id}, {url}. Retry {retries+1}/5")
+                retries += 1
+                await asyncio.sleep(5)  # sleep for 5 seconds before retrying
 
     await asyncio.sleep(0.01)
 
@@ -64,6 +75,8 @@ async def download_images():
     df = pd.read_csv(os.path.join(OUT_FOLDER,'processed',f'{SPLIT}_{cell_size}.csv'))
     image_path = Path(os.path.join(OUT_FOLDER,'images',f'{SPLIT}_{cell_size}'))
     image_path.mkdir(parents=True, exist_ok=True)
+
+    df = df.iloc[SKIP_ROWS:]
 
     df["thumb_original_url"] = df["thumb_original_url"].astype(str)
     df = df[["id", "thumb_original_url"]]

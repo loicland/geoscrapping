@@ -42,7 +42,7 @@ def split(df):
     weights = 1. / np.power(hist[df['lon_bin'], df['lat_bin']], 0.75)
     normalized_weights = weights / np.sum(weights)
 
-    test_df = df.sample(n=TEST_SIZE, weights=normalized_weights, replace=False)
+    test_df = df.sample(n=TEST_SIZE, weights=normalized_weights, replace=False, random_state=42)
 
     view_distribution(test_df, filename='test', cell_size=cell_size) 
 
@@ -53,15 +53,15 @@ def split(df):
     test_sequences = set(test_df['sequence'].values)
     df = df[~df['sequence'].isin(test_sequences)]
 
-    # Get sequences present in the test set
-    test_sequences = set(test_df['sequence'].values)
+    
+    
 
     # Recompute the weights for the remaining data in df
     weights_remaining = 1. / np.power(hist[df['lon_bin'], df['lat_bin']], 0.75)
     normalized_weights_remaining = weights_remaining / weights_remaining.sum()
 
     # Now sample for the train set
-    train_df = df.sample(n=TRAIN_SIZE, weights=normalized_weights_remaining, replace=False) 
+    train_df = df.sample(n=TRAIN_SIZE, weights=normalized_weights_remaining, replace=False, random_state=42) 
 
     # Convert lat/long to radians for BallTree
     train_df_rad = np.radians(train_df[['latitude', 'longitude']])
@@ -79,7 +79,7 @@ def split(df):
     to_remove = set(np.concatenate(ind))
 
     # Remove the collisions from train_df
-    #train_df = train_df.drop(train_df.iloc[list(to_remove)].index)
+    train_df = train_df.drop(train_df.iloc[list(to_remove)].index)
 
     view_distribution(train_df, filename='train', cell_size=cell_size) 
 
@@ -94,7 +94,7 @@ if __name__ == "__main__":
 
     df =  pd.read_csv(os.path.join(OUT_FOLDER,'./processed',f'cells_{cell_size}_enriched.csv'))
 
-    df = df.dropna()
+    df = df.dropna(subset=['image_id', 'latitude', 'longitude', 'thumb_original_url', 'country', 'sequence'])
 
     train_df, test_df = split(df) 
 
