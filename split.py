@@ -5,8 +5,8 @@ import os
 from visualize import view_distribution
 
 cell_size = 0.1
-TEST_SIZE = 250000
-TRAIN_SIZE = 2500000
+TEST_SIZE = 500000
+TRAIN_SIZE = 5000000
 MIN_PER_CELL = 10
 COLLISION_DIST = 1
 OUT_FOLDER = '/var/data/llandrieu/geoscrapping/'
@@ -49,6 +49,13 @@ def split(df):
     # Drop the rows sampled in test_df from the main df before sampling for train_df
     df = df.drop(test_df.index)
 
+    # Remove all rows from df that have a sequence present in the test set
+    test_sequences = set(test_df['sequence'].values)
+    df = df[~df['sequence'].isin(test_sequences)]
+
+    # Get sequences present in the test set
+    test_sequences = set(test_df['sequence'].values)
+
     # Recompute the weights for the remaining data in df
     weights_remaining = 1. / np.power(hist[df['lon_bin'], df['lat_bin']], 0.75)
     normalized_weights_remaining = weights_remaining / weights_remaining.sum()
@@ -78,7 +85,7 @@ def split(df):
 
     print(f'Removed {len(to_remove)} collisions')
 
-    return test_df, train_df
+    return train_df, test_df
      
 if __name__ == "__main__":
 
@@ -86,6 +93,8 @@ if __name__ == "__main__":
     print("Reading Cells...")
 
     df =  pd.read_csv(os.path.join(OUT_FOLDER,'./processed',f'cells_{cell_size}_enriched.csv'))
+
+    df = df.dropna()
 
     train_df, test_df = split(df) 
 
