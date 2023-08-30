@@ -11,7 +11,7 @@ cell_size = 0.1
 MAX_RETRIES = 5
 TIMEOUT_DURATION = 3600
 CONCURRENT_REQUESTS = 32
-SKIP_ROWS = 0
+SKIP_ROWS = int(0)
 SPLIT = 'test'
 OUT_FOLDER = '/var/data/llandrieu/geoscrapping/'
 #OUT_FOLDER = '/home/ign.fr/llandrieu/Documents/code/geoscrapping/'
@@ -79,7 +79,7 @@ async def download_images():
     df = df.iloc[SKIP_ROWS:]
 
     df["thumb_original_url"] = df["thumb_original_url"].astype(str)
-    df = df[["id", "thumb_original_url"]]
+    df = df[["image_id", "thumb_original_url"]]
     df = df.dropna(subset=["thumb_original_url"])
 
     tqdm_instance = tqdm(total=len(df))
@@ -89,7 +89,7 @@ async def download_images():
         tasks = []
         for index, row in df.iterrows():
             url = row["thumb_original_url"]
-            id = row["id"]
+            id = row["image_id"]
             if id in already_downloaded:
                 tqdm_instance.update(1)
                 continue
