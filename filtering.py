@@ -59,7 +59,7 @@ async def process_one_id(onerow, session, semaphore, progress):
         lat_idx = onerow['lat_idx']
         lon_idx = onerow['lon_idx']
 
-        get_images_ids_url = f"https://graph.mapillary.com/{image_id}?access_token={TOKEN}&fields=id,altitude,camera_type,thumb_original_url,thumb_256_url,height,width,sequence,captured_at"
+        get_images_ids_url = f"https://graph.mapillary.com/{image_id}?access_token={TOKEN}&fields=id,altitude,camera_type,thumb_original_url,sequence,captured_at"
         async with session.get(get_images_ids_url, proxy=PROXY) as response:
             progress.update(1)
 
