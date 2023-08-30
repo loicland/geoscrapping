@@ -1,6 +1,7 @@
 # geoscrapping
 
 ```
+conda update conda
 conda create -n geoscrapping
 conda activate geoscrapping
 conda install -c conda-forge pandas
