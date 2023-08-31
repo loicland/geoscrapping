@@ -55,8 +55,8 @@ def view_distribution(df, filename='', cell_size=cell_size):
     hist, xedges, yedges = np.histogram2d(longitude, latitude, bins=[lon_bins, lat_bins])
 
     # Smooth the histogram
-    #sigma = 1  # Width of the Gaussian filter
-    #hist = gaussian_filter(hist, sigma)
+    sigma = 1  # Width of the Gaussian filter
+    hist = gaussian_filter(hist, sigma)
 
     # Generate a logarithmic color scale
     cmap = plt.get_cmap('inferno')
@@ -87,7 +87,7 @@ def view_distribution_simple(df, filename='', cell_size=cell_size):
     ax.stock_img()
 
     #Define the bins for the histogram
-    num_bins = 100
+    num_bins = 400
     lon_bins = np.linspace(longitude.min(), longitude.max(), num_bins)
     lat_bins = np.linspace(latitude.min(), latitude.max(), num_bins)
 
@@ -98,8 +98,8 @@ def view_distribution_simple(df, filename='', cell_size=cell_size):
     hist, xedges, yedges = np.histogram2d(longitude, latitude, bins=[lon_bins, lat_bins])
 
     # Smooth the histogram
-    #sigma = 1  # Width of the Gaussian filter
-    #hist = gaussian_filter(hist, sigma)
+    sigma = 0.5  # Width of the Gaussian filter
+    hist = gaussian_filter(hist, sigma)
 
     # Generate a logarithmic color scale
     cmap = plt.get_cmap('inferno')

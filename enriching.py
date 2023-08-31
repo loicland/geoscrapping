@@ -28,7 +28,8 @@ if __name__ == '__main__':
 
     print("Reading Cells...")
 
-    df =  pd.read_csv(os.path.join(OUT_FOLDER,'./processed',f'cells_{cell_size}_filtered.csv'))
+    #df =  pd.read_csv(os.path.join(OUT_FOLDER,'./processed',f'cells_{cell_size}_filtered.csv'))
+    df =  pd.read_csv(os.path.join(OUT_FOLDER,'processed',f'train_{cell_size}.csv'))
     df['image_id'] = df['image_id'].astype(int)
 
     print("Adding Country & Cities..")
@@ -64,4 +65,4 @@ if __name__ == '__main__':
     #df_filtered = df[df['country'].isin(filtered_countries)]
 
     print("Saving...") 
-    df_filtered.to_csv(os.path.join(OUT_FOLDER,'./processed',f'cells_{cell_size}_enriched.csv'), index=False)
+    df_filtered.to_csv(os.path.join(OUT_FOLDER,'processed',f'train_{cell_size}.csv'), index=False)

@@ -12,7 +12,7 @@ MAX_RETRIES = 5
 TIMEOUT_DURATION = 3600
 CONCURRENT_REQUESTS = 32
 SKIP_ROWS = int(0)
-SPLIT = 'test'
+SPLIT = 'train'
 OUT_FOLDER = '/var/data/llandrieu/geoscrapping/'
 #OUT_FOLDER = '/home/ign.fr/llandrieu/Documents/code/geoscrapping/'
 PROXY = "http://proxy.ign.fr:3128"
@@ -48,7 +48,10 @@ async def download_image(semaphore, session, url, id, image_path, tqdm_instance)
                             )
                         img.save(image_path / f"{id}.jpg")
                         break
-                    except (asyncio.TimeoutError, aiohttp.client_exceptions.ServerDisconnectedError, aiohttp.client_exceptions.ClientConnectorError) as e:
+                    except (asyncio.TimeoutError, 
+                            aiohttp.client_exceptions.ServerDisconnectedError, 
+                            aiohttp.client_exceptions.ClientConnectorError,
+                            aiohttp.client_exceptions.ClientOSError) as e:
                         print(f"{type(e).__name__} - {id}, {url}")
                         retries += 1
                     except aiohttp.client_exceptions.ServerDisconnectedError:
