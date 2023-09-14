@@ -87,7 +87,7 @@ def view_distribution_simple(df, filename='', cell_size=cell_size):
     ax.stock_img()
 
     #Define the bins for the histogram
-    num_bins = 400
+    num_bins = 200
     lon_bins = np.linspace(longitude.min(), longitude.max(), num_bins)
     lat_bins = np.linspace(latitude.min(), latitude.max(), num_bins)
 
@@ -98,7 +98,7 @@ def view_distribution_simple(df, filename='', cell_size=cell_size):
     hist, xedges, yedges = np.histogram2d(longitude, latitude, bins=[lon_bins, lat_bins])
 
     # Smooth the histogram
-    sigma = 0.5  # Width of the Gaussian filter
+    sigma = 0.25  # Width of the Gaussian filter
     hist = gaussian_filter(hist, sigma)
 
     # Generate a logarithmic color scale
@@ -130,7 +130,6 @@ if __name__ == '__main__':
 
         df =  pd.read_csv(os.path.join(OUT_FOLDER,f'./processed/train_{cell_size}.csv'))
         df['image_id'] = df['image_id'].astype(int)
-
         print("Computing Density Map...")
         view_distribution_simple(df)
 

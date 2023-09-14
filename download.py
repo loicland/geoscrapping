@@ -7,11 +7,12 @@ from PIL import Image
 from tqdm import tqdm
 import os
 
+
 cell_size = 0.1
 MAX_RETRIES = 5
 TIMEOUT_DURATION = 3600
 CONCURRENT_REQUESTS = 32
-SKIP_ROWS = int(0)
+SKIP_ROWS = int(0e6)
 SPLIT = 'train'
 OUT_FOLDER = '/var/data/llandrieu/geoscrapping/'
 #OUT_FOLDER = '/home/ign.fr/llandrieu/Documents/code/geoscrapping/'
@@ -32,10 +33,11 @@ async def download_image(semaphore, session, url, id, image_path, tqdm_instance)
                             print(f"Error {response.status}: {id}, {url}")
                             break
 
-                        content = content = await response.content.read()
+                        content = await response.content.read()
                         img = Image.open(BytesIO(content))
                         img = img.convert("RGB")
                         width, height = img.size
+                        
                         if width >= 512 or height >= 512:
                             if width < height:
                                 new_width = 512
@@ -63,7 +65,10 @@ async def download_image(semaphore, session, url, id, image_path, tqdm_instance)
                         break
                     except aiohttp.client_exceptions.ClientPayloadError:
                         retries += 1
-                        await asyncio.sleep(2)  # You can adjust the sleep duration
+                        await asyncio.sleep(2)
+                    except aiohttp.client_exceptions.ClientOSError:
+                        retries += 1
+                        await asyncio.sleep(2) 
                     finally:
                         tqdm_instance.update(1)
             except aiohttp.client_exceptions.ServerDisconnectedError:
@@ -76,6 +81,7 @@ async def download_image(semaphore, session, url, id, image_path, tqdm_instance)
 async def download_images():
     # Read the csv file
     df = pd.read_csv(os.path.join(OUT_FOLDER,'processed',f'{SPLIT}_{cell_size}.csv'))
+
     image_path = Path(os.path.join(OUT_FOLDER,'images',f'{SPLIT}_{cell_size}'))
     image_path.mkdir(parents=True, exist_ok=True)
 
