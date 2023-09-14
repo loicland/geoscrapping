@@ -59,6 +59,8 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='test or train')
 
+    
+    parser.add_argument('--root', default='/var/data/llandrieu/geoscrapping/images/')
     parser.add_argument('--fold', default='test')
     parser.add_argument('--skip', type=int, default=0)
     parser.add_argument('--rot', default=90)
@@ -66,9 +68,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Parameters
-    args.csv_file_path = '/var/data/llandrieu/geoscrapping/processed/'+args.fold+'.csv'  # Replace with your CSV file path'
-    args.image_folder = '/var/data/llandrieu/geoscrapping/images/'+args.fold+'/'      # Replace with your image folder path
-    args.trash_folder = '/var/data/llandrieu/geoscrapping/images/quarantined/bad_'+args.fold+'_filtered'
-    args.rot_folder = '/var/data/llandrieu/geoscrapping/images/quarantined/'
+    args.image_folder = args.root+args.fold+'/'      # Replace with your image folder path
+    args.trash_folder = args.root+'/var/data/llandrieu/geoscrapping/images/quarantined/bad_'+args.fold+'_filtered'
+    args.rot_folder = args.root+'/quarantined/'
 
     manual_filtering(args)
