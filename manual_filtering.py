@@ -6,7 +6,7 @@ from PIL import Image, ImageTk
 
 
 class ImageSorter:
-    def __init__(self, args, master, images):
+    def __init__(self, master, args, images):
         self.master = master
         self.images = images
         self.source_folder = args.source_folder
@@ -17,7 +17,8 @@ class ImageSorter:
         self.load_image()
 
         # Bind keys
-        self.master.bind("<space>", self.next_image)
+        self.master.bind("<Right>", self.next_image)
+        self.master.bind("<Left>", self.prev_image)
         self.master.bind("x", self.move_image)
 
     def load_image(self):
@@ -36,6 +37,17 @@ class ImageSorter:
         else:
             # Close the application if no images left
             self.master.quit()
+
+    def prev_image(self, event):
+        # Clear current image and load the previous one
+        self.label.pack_forget()
+        self.index -= 1
+        if self.index >= 0:
+            self.load_image()
+        else:
+            # If no previous images, set index to 0 (or close the app if you prefer)
+            self.index = 0
+            self.load_image()
 
     def move_image(self, event):
         # Move current image to the special folder

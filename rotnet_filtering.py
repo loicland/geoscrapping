@@ -15,61 +15,7 @@ from vissl.models import build_model
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 import pandas as pd
-from tkinter import Tk, Label, PhotoImage
-from PIL import Image, ImageTk
-
-
-
-
-class ImageSorter:
-    def __init__(self, args, master, images):
-        self.master = master
-        self.images = images
-        self.source_folder = args.source_folder
-        self.trash_folder = args.trash_folder
-        self.index = 0
-
-        # Load initial image
-        self.load_image()
-
-        # Bind keys
-        self.master.bind("<space>", self.next_image)
-        self.master.bind("x", self.move_image)
-
-    def load_image(self):
-        image_path = os.path.join(self.source_folder, self.images[self.index])
-        pil_image = Image.open(image_path)
-        self.tk_image = ImageTk.PhotoImage(pil_image)
-        self.label = Label(self.master, image=self.tk_image)
-        self.label.pack()
-
-    def next_image(self, event):
-        # Clear current image and load next
-        self.label.pack_forget()
-        self.index += 1
-        if self.index < len(self.images):
-            self.load_image()
-        else:
-            # Close the application if no images left
-            self.master.quit()
-
-    def move_image(self, event):
-        # Move current image to the special folder
-        current_image = os.path.join(self.source_folder, self.images[self.index])
-        destination_path = os.path.join(self.trash_folder, self.images[self.index])
-        os.rename(current_image, destination_path)
-        # Load next image
-        self.next_image(event)
-
-def manual_filtering(args):
-    args.source_folder = args.rot_folder+args.fold+"_"+str(args.rot)+"/"
-    args.trash_folder = args.rot_folder+args.fold+"_bad"
-
-    images = [f for f in os.listdir(args.source_folder) if f.endswith(('.jpg'))]
-    root = Tk()
-    app = ImageSorter(root, args, images)
-    root.mainloop()
-
+from PIL import Image
 
 def filtering(args):
 
@@ -144,6 +90,23 @@ def filtering(args):
     rotations = [0,90,180,270]
 
     for i, (x, path) in enumerate(tqdm(dataloader)):
+
+        modified_paths = [
+            path.replace('/images/'+args.fold, '/images/quarantined/'+args.fold+'_180')
+            for path in path
+        ]
+
+        existing_modified_paths = [
+            modified_path for modified_path in modified_paths
+            if os.path.exists(modified_path)
+        ]
+
+        if len(existing_modified_paths)>0:
+            print(existing_modified_paths)
+            continue
+
+
+
         x = x.to(device)
         with torch.no_grad():
             y = torch.nn.functional.softmax(model(x)[0], dim=1).argmax(dim=1)
@@ -151,9 +114,12 @@ def filtering(args):
             if y[j] != 0:
                 print(rotations[y[j]])
                 image_id = path[j].split("/")[-1].split(".")[0]
-                shutil.copy(path[j], args.rot_folder+args.fold+"_"+str(rotations[y[j]])+"/"+image_id+".jpg")
+                destination_path = os.path.join(args.rot_folder, args.fold + "_" + str(rotations[y[j]]), image_id + ".jpg")
 
-
+                if os.path.exists(destination_path):
+                    print(f"File {destination_path} already exists!")
+                else:
+                    shutil.copy(path[j], destination_path)
 
 def rotate(args):
     rotations = [180,270]
@@ -170,14 +136,38 @@ def rotate(args):
     return
 
 
+def update_rotation(args):
+    rotations = [90,180,270]
+    for rot in rotations:
+        folder_path = args.rot_folder+args.fold+"_"+str(rot)+"/"
+        for img in os.listdir(folder_path):
+            rotate_img_path = os.path.join(folder_path, img)
+            root_img_path = os.path.join(args.image_folder , img)
+            
+            # Check if it's a file before moving
+            if os.path.isfile(rotate_img_path):
+                shutil.copy(rotate_img_path, root_img_path)
+            else:
+                print("!!!" + rotate_img_path)
+
+def purge(args):
+    bad_folder_path = args.rot_folder+args.fold+"_bad/"
+    for img in os.listdir(bad_folder_path):
+        bad_img_path = os.path.join(bad_folder_path, img)
+        root_img_path = os.path.join(args.image_folder , img)
+            
+        # Check if it's a file before moving
+        if os.path.isfile(root_img_path):
+            os.remove(root_img_path)
+
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='test or train')
 
-    parser.add_argument('--fold', default='test')
-    parser.add_argument('--skip', type=int, default=0)
+    parser.add_argument('--fold', default='train')
+    parser.add_argument('--skip', type=int, default=2000000)
     parser.add_argument('--batch_size', type=int, default=128)
-    parser.add_argument('--rot', default=90)
 
     args = parser.parse_args()
 
@@ -188,8 +178,8 @@ if __name__ == "__main__":
     args.rot_folder = '/var/data/llandrieu/geoscrapping/images/quarantined/'
 
     #rotate(args)
-    manual_filtering(args)
-    #filtering(args)
-    #make_consistent(args)
+    filtering(args)
+    #update_rotation(args)
+    #purge(args)
     #create_canary(args)
     #evaluate_canary(args)

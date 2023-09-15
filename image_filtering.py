@@ -11,20 +11,6 @@ import pandas as pd
 from tqdm import tqdm
 import argparse
 
-#import vissl
-#import torch
-
-#from omegaconf import OmegaConf
-#from vissl.utils.hydra_config import AttrDict
-#from vissl.utils.hydra_config import compose_hydra_configuration, convert_to_attrdict
-
-#from vissl.models import build_model
-
-#from torch.utils.data import Dataset, DataLoader
-#from torchvision import transforms
-#from PIL import Image
-#import pandas as pd
-
 def make_consistent(args):
     "ensure the consistency between images and csv"
     df = pd.read_csv(args.csv_file_path)
@@ -84,12 +70,33 @@ def create_canary(args):
         else:
             print(img_id)
 
+def is_purple(image_path, threshold=0.5):
+    image = cv2.imread(image_path)
+        
+    # Define the criteria for purple: (R > 60 & B > 60 & G < 50)
+    purple_pixels = np.sum((image[:,:,0] > 60) & (image[:,:,2] > 60) & (image[:,:,1] < 50))
+    total_pixels = image.shape[0] * image.shape[1]
+        
+    # Check if the proportion of purple pixels is greater than the threshold
+    return (purple_pixels / total_pixels) > threshold
+
     print("Process completed!")
+
+def is_vertical(image_path, threshold=1.25):
+    image = cv2.imread(image_path)
+    height, width = image.shape[:2]
+    
+    aspect_ratio = height / width
+    return aspect_ratio > threshold
+
+
 
 def filtered_out(img_path):
     #return is_dark(img_path)
     #return is_blurry(img_path)
-    return is_blurry(img_path) or is_dark(img_path)
+    #return is_purple(img_path)
+    return is_vertical(img_path) or is_purple(img_path)
+    #return is_blurry(img_path) or is_dark(img_path)
 
 def filter_folder(args):
     # Get list of images
@@ -107,7 +114,7 @@ def filter_folder(args):
         if filtered_out(img_path):
             # Move it to the args.trash_folder
             trash_path = os.path.join(args.trash_folder, img_file)
-            shutil.move(img_path, trash_path)
+            shutil.copy(img_path, trash_path)
             n_killed = n_killed + 1
             print(f"Killed image {n_seen}, {n_killed} images killed")
 
@@ -151,7 +158,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='test or train')
 
-    parser.add_argument('--fold', default='train')
+    parser.add_argument('--fold', default='test')
     parser.add_argument('--skip', type=int, default=0)
 
     args = parser.parse_args()
@@ -161,10 +168,10 @@ if __name__ == "__main__":
     args.image_folder = '/var/data/llandrieu/geoscrapping/images/'+args.fold+'/'      # Replace with your image folder path
     args.good_canary_folder = '/var/data/llandrieu/geoscrapping/images/canary/'
     args.bad_canary_folder = '/var/data/llandrieu/geoscrapping/images/bad_canary/'
-    args.trash_folder = '/var/data/llandrieu/geoscrapping/images/trash/bad_'+args.fold+'_filtered'
+    args.trash_folder = '/var/data/llandrieu/geoscrapping/images/quarantined/'+args.fold+'_sus'
 
-    filter_folder(args)
-    #make_consistent(args)
+    #filter_folder(args)
+    make_consistent(args)
     #create_canary(args)
     #evaluate_canary(args)
 
