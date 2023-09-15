@@ -14,7 +14,6 @@ from vissl.models import build_model
 
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
-import pandas as pd
 from PIL import Image
 
 def filtering(args):
